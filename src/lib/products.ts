@@ -46,3 +46,33 @@ export type CreateProductType = {
   supplierUuid: string,
   brandUuid: string
 }
+
+
+
+
+
+export type UpdateProductType={
+    name:string,
+    description:string,
+    stockQuantity:0,
+    priceIn:1,
+    priceOut:0,
+    discount:0,
+    color:[
+        {
+            color:string,
+            images:[
+                string
+            ]
+        }
+    ],
+    thumbnail:string,
+    warranty:string,
+    availability:true,
+    image:[
+        string  
+    ],
+    categoryUuid:string,
+    supplierUuid:string,
+    brandUuid:string
+}
