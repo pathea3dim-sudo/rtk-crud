@@ -1,36 +1,45 @@
-
-
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-
-
-type UserLoginType={
-    email:string,
-    password:string 
-
+export type UserLoginType ={ 
+    email :string,
+    password:string
 }
-
-
-const authApi=createApi({
-    reducerPath: "authApi",
-
-    baseQuery: fetchBaseQuery({baseUrl:process.env.NEXT_PUBLIC_ISHOP_BASE_URL}),
-    endpoints: (builder)=>({
-        //login
-        logininUser:builder.mutation<UserLoginType, unknown>({
-            query: ({email, password})=>({
-                url: `/auth`,
-                method: "POST",
-                body:{
-                    email,
-                    password
-                }
+export type UserRegisterType ={
+  username: string,
+  phoneNumber: string,
+  address: {
+    addressLine1: string,
+    addressLine2: string,
+    road: string,
+    linkAddress: string
+  },
+  email: string,
+  password: string,
+  confirmPassword: string,
+  profile: string
+}
+export const authApi = createApi({
+    reducerPath:"authApi",
+    baseQuery:fetchBaseQuery({
+        baseUrl : `${process.env.NEXT_PUBLIC_ISHOP_BASE_URL}`
+    }),
+    endpoints:(builder)=>({
+        // builder.mutation<ResponseType, RequestType>()
+        loginUser : builder.mutation<UserLoginType,UserLoginType>({
+            query:(payload)=>({
+                url: `/auth/login`,
+                method:"POST",      
+                body:payload
+            })
+        }),
+         registerUser : builder.mutation<UserRegisterType,UserRegisterType>({
+            query:(payload)=>({
+                url: `/users/user-signup`,
+                method:"POST",      
+                body:payload
             })
         })
     })
 })
 
-
-const {
-    userLoginUserMutation
-}=authApi;
+export const {useLoginUserMutation,useRegisterUserMutation} = authApi;
