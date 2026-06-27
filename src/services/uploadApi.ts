@@ -1,43 +1,4 @@
-// import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-
-
-// interface   UploadResponse{
-//     name:string
-// }
-
-// export const uploadApi=createApi({
-//     reducerPath: "uploadApi",
-//     baseQuery: fetchBaseQuery({
-//         baseUrl: `${process.env.NEXT_PUBLIC_ISHOP_BASE_URL}`,
-//     }),
-//     tagTypes: ["Files"],
-//     endpoints: (builder)=>({
-//         uploadFile: builder.mutation<UploadResponse,File>({
-//             query: (files)=>{
-//                 const formData=new FormData();
-//                 formData.append("files", files);
-
-//                 return {
-//                     url: "/medias/upload-multiple",
-//                     method: "POST",
-//                     headers: {
-//                         // Remove Content-Type header to let browser set it with boundary
-//                     },
-//                     body: formData
-//                 }
-//             },
-//             invalidatesTags: ["Files"],
-//         })
-//     })
-// })
-
-// export const {
-//      useUploadFilesMutation
-// }=uploadApi;
-
-
-
+// src/services/uploadApi.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export interface UploadResponse {
@@ -62,35 +23,53 @@ export interface MultipleUploadResponse {
   message?: string;
 }
 
+// Get base URL with fallback
+const getBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_ISHOP_BASE_URL;
+  if (envUrl) {
+    console.log("Using env URL for upload:", envUrl);
+    return envUrl;
+  }
+  return "https://ishop.cheat.casa/api/v1";
+};
+
 export const uploadApi = createApi({
   reducerPath: "uploadApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${process.env.NEXT_PUBLIC_ISHOP_BASE_URL}`,
+    baseUrl: getBaseUrl(),
+    prepareHeaders: (headers) => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (token) {
+        headers.set('authorization', `Bearer ${token}`);
+      }
+      return headers;
+    },
   }),
   tagTypes: ["Files"],
   endpoints: (builder) => ({
+    // Single file upload - used by your component
     uploadSingleFile: builder.mutation<UploadResponse, File>({
       query: (file) => {
         const formData = new FormData();
         formData.append("file", file);
-        
         return {
-          url: "/medias/upload-single",
+          url: '/medias/upload-single',
           method: "POST",
           body: formData,
         };
       },
       invalidatesTags: ["Files"],
     }),
+
+    // Multiple files upload
     uploadMultipleFiles: builder.mutation<MultipleUploadResponse, File[]>({
       query: (files) => {
         const formData = new FormData();
-        files.forEach(file => {
+        files.forEach((file) => {
           formData.append("files", file);
         });
-        
         return {
-          url: "/medias/upload-multiple",
+          url: '/medias/upload-multiple',
           method: "POST",
           body: formData,
         };
@@ -106,5 +85,5 @@ export const {
   useUploadMultipleFilesMutation,
 } = uploadApi;
 
-// If you want to use a different name, export it separately
-export const useUploadFilesMutation = useUploadMultipleFilesMutation;
+// For backward compatibility
+export const useUploadFilesMutation = useUploadSingleFileMutation;

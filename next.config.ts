@@ -1,3 +1,4 @@
+// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
@@ -8,7 +9,7 @@ const nextConfig = {
       },
     ];
   },
-  // Enable CORS for development
+  // Add CORS headers for development
   async headers() {
     return [
       {

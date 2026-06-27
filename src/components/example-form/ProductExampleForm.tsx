@@ -1,84 +1,3 @@
-// "use client"
-// // import { useLoginUserMutation } from "@/services/auth";
-// import { error } from "console";
-// import { useForm } from "react-hook-form"
-// import { toast } from "sonner";
-// import { email } from "zod";
-// import { useLoginUserMutation } from "@/services/auth";
-
-// type formData = {
-//   email: string,
-//   password: string
-// }
-
-// export default function FormExampleComponent() {
-//   // calling login custom hook
-//   const [loginRequest, {data:loginResponse,error}] = useLoginUserMutation();
-//   // 1. delcare object using with useForm
-//   const {
-//     register,
-//     handleSubmit,
-//     reset,
-//     setError
-//   }= useForm({
-//     // 2. set default values
-//     defaultValues:{
-//       email: "",
-//       password: ""
-//     }
-//   });
-
-//   // 3. create handleSubmit to track value from input form 
-//   const onSubmit = (data: formData)=> {
-//       try{
-//         loginRequest(
-//         {
-//           email: data?.email,
-//           password: data?.password
-//         }
-//        )
-//        console.log(error)
-
-//        if(data != null){
-//          toast("You have login successfully!")
-//        }
-//       }catch(error){
-//         toast.error("You need to login again!")
-//       }
-//       //  console.log("===> Form Data Email: ", data?.email);
-//       //  console.log("===> Form Data Password: ", data?.password);
-//   }
-//   return (
-//     <div>
-//       <form onSubmit={handleSubmit(onSubmit)}>
-//         {/* input email */}
-//         <label htmlFor="email">Email</label>
-//         <input 
-//         {...register("email")}
-//         type="email"
-//         name="email" 
-//         id="email" 
-//         className="border"
-//         />
-
-//         {/* password */}
-//         <label htmlFor="password">Password</label>
-//         <input 
-//         {...register("password")}
-//         type="password"
-//         name="password" 
-//         id="password"
-//          className="border"
-//          />
-
-//         {/* submit */}
-//         <button type="submit"  className="border">Submit</button>
-//       </form>
-      
-//     </div>
-//   )
-// }
-
 // components/example-form/ProductExampleForm.tsx
 "use client";
 
@@ -86,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useLoginUserMutation } from "@/services/auth";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type formData = {
     email: string,
@@ -95,22 +15,25 @@ type formData = {
 export default function ProductExampleComponent() {
     const router = useRouter();
     const [loginRequest, { isLoading }] = useLoginUserMutation();
+    const [loginError, setLoginError] = useState<string | null>(null);
 
     const {
         register,
         handleSubmit,
         reset,
-        setError,
         formState: { errors }
     } = useForm<formData>({
         defaultValues: {
-            email: "",
-            password: ""
+            email: "sokcheatsrorng@gmail.com",
+            password: "Cheat@2024"
         }
     });
 
     const onSubmit = async (data: formData) => {
+        setLoginError(null);
         try {
+            console.log("Attempting login with:", data.email);
+            
             const response = await loginRequest({
                 email: data.email,
                 password: data.password
@@ -123,42 +46,75 @@ export default function ProductExampleComponent() {
             if (token) {
                 localStorage.setItem('accessToken', token);
                 console.log("Token stored:", token.substring(0, 20) + "...");
-                toast.success("Login successful!");
+                toast.success("Login successful! 🎉");
                 reset();
                 
                 // Redirect to create product page
-                router.push('/createproduct');
+                setTimeout(() => {
+                    router.push('/createproduct');
+                }, 500);
             } else {
                 toast.error("No token received from server");
+                setLoginError("No token received from server");
             }
 
         } catch (err: any) {
             console.log("Login Error:", err);
-            toast.error("Email or Password is incorrect!");
-
-            setError("email", {
-                message: "Invalid Email"
-            });
-            setError("password", {
-                message: "Invalid Password"
-            });
+            
+            // Only show the error message, don't set form errors
+            if (err?.status === 401) {
+                setLoginError("Invalid email or password. Please check your credentials.");
+                toast.error("Invalid email or password!");
+            } else if (err?.status === 404) {
+                setLoginError("Login endpoint not found. Please contact support.");
+                toast.error("Login endpoint not found!");
+            } else if (err?.status === 'FETCH_ERROR') {
+                setLoginError("Cannot connect to server. Please check your network.");
+                toast.error("Network error!");
+            } else if (err?.data?.error?.description) {
+                const errMsg = typeof err.data.error.description === 'object' 
+                    ? Object.values(err.data.error.description)[0] 
+                    : err.data.error.description;
+                setLoginError(String(errMsg));
+                toast.error(String(errMsg));
+            } else if (err?.data?.message) {
+                setLoginError(err.data.message);
+                toast.error(err.data.message);
+            } else {
+                setLoginError("Login failed. Please try again.");
+                toast.error("Login failed!");
+            }
         }
     }
 
     return (
         <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+            
+            {loginError && (
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
+                    {loginError}
+                </div>
+            )}
+            
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>
                     <label htmlFor="email" className="block text-sm font-medium mb-1">
                         Email
                     </label>
                     <input
-                        {...register("email", { required: "Email is required" })}
+                        {...register("email", { 
+                            required: "Email is required",
+                            pattern: {
+                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                message: "Please enter a valid email address"
+                            }
+                        })}
                         type="email"
                         id="email"
                         className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Enter your email"
+                        disabled={isLoading}
                     />
                     {errors.email && (
                         <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
@@ -170,11 +126,18 @@ export default function ProductExampleComponent() {
                         Password
                     </label>
                     <input
-                        {...register("password", { required: "Password is required" })}
+                        {...register("password", { 
+                            required: "Password is required",
+                            minLength: {
+                                value: 8,
+                                message: "Password must be at least 8 characters"
+                            }
+                        })}
                         type="password"
                         id="password"
                         className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Enter your password"
+                        disabled={isLoading}
                     />
                     {errors.password && (
                         <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
@@ -188,6 +151,13 @@ export default function ProductExampleComponent() {
                 >
                     {isLoading ? "Logging in..." : "Login"}
                 </button>
+                
+                <p className="text-sm text-gray-500 text-center mt-2">
+                    Don't have an account?{" "}
+                    <a href="/register" className="text-blue-500 hover:underline">
+                        Create Account
+                    </a>
+                </p>
             </form>
         </div>
     );
