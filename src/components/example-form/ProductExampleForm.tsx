@@ -79,139 +79,116 @@
 //   )
 // }
 
-
+// components/example-form/ProductExampleForm.tsx
 "use client";
 
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useLoginUserMutation } from "@/services/auth";
+import { useRouter } from "next/navigation";
 
 type formData = {
     email: string,
     password: string
 }
 
-export default function FormExampleComponent() {
+export default function ProductExampleComponent() {
+    const router = useRouter();
+    const [loginRequest, { isLoading }] = useLoginUserMutation();
 
-    // 1. calling login custom hook
-    const [loginRequest, { data: loginResponse, error, isLoading }] = useLoginUserMutation();
-
-    // 2. declare object using useForm
     const {
         register,
         handleSubmit,
         reset,
-        setError
+        setError,
+        formState: { errors }
     } = useForm<formData>({
-
-        // 3. set default values
         defaultValues: {
-
             email: "",
-
             password: ""
-
         }
-
     });
 
-    // 4. create handle submit
     const onSubmit = async (data: formData) => {
-
         try {
-
-            // 5. calling login api
             const response = await loginRequest({
-
                 email: data.email,
-
                 password: data.password
-
             }).unwrap();
 
-            console.log("Login Response :", response);
+            console.log("Login Response:", response);
 
-            toast.success("You have login successfully!");
-
-            reset();
+            // Store token
+            const token = response?.token || response?.accessToken || response?.data?.token;
+            if (token) {
+                localStorage.setItem('accessToken', token);
+                console.log("Token stored:", token.substring(0, 20) + "...");
+                toast.success("Login successful!");
+                reset();
+                
+                // Redirect to create product page
+                router.push('/createproduct');
+            } else {
+                toast.error("No token received from server");
+            }
 
         } catch (err: any) {
-
-            console.log("Login Error :", err);
-
+            console.log("Login Error:", err);
             toast.error("Email or Password is incorrect!");
 
             setError("email", {
                 message: "Invalid Email"
             });
-
             setError("password", {
                 message: "Invalid Password"
             });
-
         }
-
     }
 
     return (
+        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                    <label htmlFor="email" className="block text-sm font-medium mb-1">
+                        Email
+                    </label>
+                    <input
+                        {...register("email", { required: "Email is required" })}
+                        type="email"
+                        id="email"
+                        className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter your email"
+                    />
+                    {errors.email && (
+                        <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                    )}
+                </div>
 
-        <div>
-
-            <form onSubmit={handleSubmit(onSubmit)}>
-
-                {/* email */}
-
-                <label htmlFor="email">
-                    Email
-                </label>
-
-                <input
-
-                    {...register("email")}
-
-                    type="email"
-
-                    id="email"
-
-                    className="border"
-
-                />
-
-                <br />
-
-                {/* password */}
-
-                <label htmlFor="password">
-                    Password
-                </label>
-
-                <input
-
-                    {...register("password")}
-
-                    type="password"
-
-                    id="password"
-
-                    className="border"
-
-                />
-
-                <br />
-
-                {/* submit */}
+                <div>
+                    <label htmlFor="password" className="block text-sm font-medium mb-1">
+                        Password
+                    </label>
+                    <input
+                        {...register("password", { required: "Password is required" })}
+                        type="password"
+                        id="password"
+                        className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter your password"
+                    />
+                    {errors.password && (
+                        <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+                    )}
+                </div>
 
                 <button
                     type="submit"
-                    className="border px-3 py-2"
+                    className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
                     disabled={isLoading}
                 >
-                    {isLoading ? "Loading..." : "Login"}
+                    {isLoading ? "Logging in..." : "Login"}
                 </button>
-
             </form>
-
         </div>
-
     );
 }

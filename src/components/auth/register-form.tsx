@@ -1,9 +1,6 @@
-
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { profile } from "console";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import {
@@ -16,14 +13,13 @@ import {
 } from "../ui/card";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "../ui/field";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { useMutation, useRegisterUserMutation } from ".././../services/auth";
+import { useRegisterUserMutation } from "../../services/auth";
 
 const formSchema = z.object({
   username: z
@@ -34,42 +30,47 @@ const formSchema = z.object({
     .string()
     .min(10, "Phone number must be at least 10 characters."),
   address: z.object({
-    addressLine1: z.string(),
-    addressLine2: z.string(),
-    road: z.string(),
-    linkAddress: z.string(),
+    addressLine1: z.string().optional(),
+    addressLine2: z.string().optional(),
+    road: z.string().optional(),
+    linkAddress: z.string().optional(),
   }),
-  email: z.email(),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(4, "Password at least 4 characters"),
   confirmPassword: z.string().min(4, "Confirm password at least 4 characters"),
-  profile: z.string(),
+  profile: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
-export function RegisterForm() {
+export default function RegisterForm() {
+  const [register, { isLoading }] = useRegisterUserMutation();
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "pathea",
-      phoneNumber: "023333333333",
+      username: "",
+      phoneNumber: "",
       address: {
-        addressLine1: "Optional",
-        addressLine2: "Optional",
-        road: "Optional",
-        linkAddress: "Optional",
+        addressLine1: "",
+        addressLine2: "",
+        road: "",
+        linkAddress: "",
       },
-      email: "dim.pathea@gmail.com",
-      password: "pathea@123",
-      confirmPassword: "pathea@123",
-      profile:"https://img.magnific.com/free-vector/cute-dino-dracula-vampire-cartoon-vector-icon-illustration-animal-holiday-icon-isolated-flat-vector_138676-11365.jpg?semt=ais_hybrid&w=740&q=80"
+      email: "",
+      password: "",
+      confirmPassword: "",
+      profile: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmQiqtKTYEE5qoxNlNQEcvI7VPyYjAHjbVY5gh_7_MAw&s=10",
     },
   });
-//   const [register] = useRegisterUserMutation();
-const [registe]=useRegisterUserMutation();
-  function onSubmit(data: z.infer<typeof formSchema>) {
+
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
-      console.log(data);
-      register(data);
-      console.log("Registration success");
+      console.log("Sending registration data:", data);
+      const result = await register(data).unwrap();
+      console.log("Registration success:", result);
+      form.reset();
     } catch (error) {
       console.error("Registration failed:", error);
     }
@@ -90,13 +91,13 @@ const [registe]=useRegisterUserMutation();
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="form-rhf-input-profile">
-                    Profile Url
+                    Profile Url (Optional)
                   </FieldLabel>
                   <Input
                     {...field}
                     id="form-rhf-input-profile"
                     aria-invalid={fieldState.invalid}
-                    placeholder="Enter profile"
+                    placeholder="Enter profile URL"
                     autoComplete="profile"
                   />
                   {fieldState.invalid && (
@@ -105,50 +106,51 @@ const [registe]=useRegisterUserMutation();
                 </Field>
               )}
             />
-            <div className="flex gap-5">
-              <Controller
-                name="username"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-rhf-input-username">
-                      Username
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="form-rhf-input-username"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="Enter uername"
-                      autoComplete="username"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="phoneNumber"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-rhf-input-phoneNumber">
-                      Phone Number
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="form-rhf-input-phoneNumber"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="Enter Phone Number"
-                      autoComplete="phoneNumber"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-            </div>
+            
+            <Controller
+              name="username"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-rhf-input-username">
+                    Username
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="form-rhf-input-username"
+                    aria-invalid={fieldState.invalid}
+                    placeholder="Enter username"
+                    autoComplete="username"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            
+            <Controller
+              name="phoneNumber"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-rhf-input-phoneNumber">
+                    Phone Number
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="form-rhf-input-phoneNumber"
+                    aria-invalid={fieldState.invalid}
+                    placeholder="Enter Phone Number"
+                    autoComplete="tel"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            
             <Controller
               name="email"
               control={form.control}
@@ -168,20 +170,22 @@ const [registe]=useRegisterUserMutation();
                 </Field>
               )}
             />
+            
             <Controller
               name="password"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="form-rhf-input-password">
-                    Confirm Password
+                    Password
                   </FieldLabel>
                   <Input
                     {...field}
+                    type="password"
                     id="form-rhf-input-password"
                     aria-invalid={fieldState.invalid}
                     placeholder="Enter Password"
-                    autoComplete="password"
+                    autoComplete="new-password"
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -189,6 +193,7 @@ const [registe]=useRegisterUserMutation();
                 </Field>
               )}
             />
+            
             <Controller
               name="confirmPassword"
               control={form.control}
@@ -199,10 +204,11 @@ const [registe]=useRegisterUserMutation();
                   </FieldLabel>
                   <Input
                     {...field}
+                    type="password"
                     id="form-rhf-input-confirmPassword"
                     aria-invalid={fieldState.invalid}
                     placeholder="Enter Confirm Password"
-                    autoComplete="confirmPassword"
+                    autoComplete="new-password"
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -218,8 +224,8 @@ const [registe]=useRegisterUserMutation();
           <Button type="button" variant="outline" onClick={() => form.reset()}>
             Reset
           </Button>
-          <Button type="submit" form="form-rhf-input">
-            Save
+          <Button type="submit" form="form-rhf-input" disabled={isLoading}>
+            {isLoading ? "Registering..." : "Register"}
           </Button>
         </Field>
       </CardFooter>

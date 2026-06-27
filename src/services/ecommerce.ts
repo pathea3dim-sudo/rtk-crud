@@ -1,131 +1,147 @@
-// // import { UpdateProductType } from './../components/tables/Columns';
 
-// import { UpdateProductType } from '@/lib/products';
-// import { CreateProductType, ProductResponse, ProductType } from '@/lib/products';
-// import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react'
+// import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+// import { CreateProductType, ProductResponse, ProductType, UpdateProductType } from '@/lib/products';
 
-
-// export const ecommerceApi= createApi({
+// export const ecommerceApi = createApi({
 //   reducerPath: 'ecommerceApi',
-//   baseQuery: fetchBaseQuery({baseUrl: `${process.env.NEXT_PUBLIC_ISHOP_BASE_URL}`}),
-//     tagTypes: ["Products"],
+//   baseQuery: fetchBaseQuery({
+//     baseUrl: `${process.env.NEXT_PUBLIC_ISHOP_BASE_URL}`,
+//     prepareHeaders: (headers) => {
+//       const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+//       if (token) {
+//         headers.set('authorization', `Bearer ${token}`);
+//       }
+//       headers.set('content-type', 'application/json');
+//       return headers;
+//     },
+//   }),
+//   tagTypes: ["Products"],
+  
+//   endpoints: (builder) => ({
+//     getAllProduct: builder.query<ProductResponse, { page: number; size: number }>({
+//       query: ({ page, size }) => `/products?page=${page}&size=${size}`,
+//       providesTags: ["Products"],
+//     }),
 
-//   endpoints: (builder)=>({
-//     // getAllProducts
-//      getAllProduct: builder.query<ProductResponse,{page:number,size:number}>({
-//       query: ({page, size}) => `/products?page=${page}&size=${size}`,
-//        providesTags: ["Products"]
-//      }),
-//     //  getProductByUUid
 //     getProductByUuid: builder.query<ProductType, string>({
 //       query: (uuid: string) => ({
-//         url: `/products/${uuid}`,providesTags: ["Products"]
-//       })
-//     }),
-//     // create Product
-//     createProduct : builder.mutation<CreateProductType,unknown,unknown>({
-//       query: (newProduct:CreateProductType)=> ({
-//          url: `/products`,
-//          method: 'POST',
-//          headers: {
-//           'content-type': 'application/json',
-//           Authorization: `bearer ${process.env.NEXT_PUBLIC_ACCESS_TOKEN}`
-//          },
-//          body: newProduct
+//         url: `/products/${uuid}`,
 //       }),
-//             invalidatesTags: ["Products"]
+//       providesTags: (result, error, uuid) => [{ type: 'Products', id: uuid }],
 //     }),
-//     updateProduct: builder.mutation<
-//       ProductType, 
-//       { uuid: string; data: UpdateProductType }>({
+
+//     createProduct: builder.mutation<ProductType, CreateProductType>({
+//       query: (newProduct) => ({
+//         url: `/products`,
+//         method: 'POST',
+//         body: newProduct,
+//       }),
+//       invalidatesTags: ["Products"],
+//     }),
+
+//     updateProduct: builder.mutation<ProductType, { uuid: string; data: UpdateProductType }>({
 //       query: ({ uuid, data }) => ({
 //         url: `/products/${uuid}`,
-//         method: "PUT",
-//            headers: {
-//             "Content-Type": "application/json",
-//             Authorization: `bearer ${process.env.NEXT_PUBLIC_ACCESS_TOKEN}`,
-//           },
+//         method: 'PUT',
 //         body: data,
 //       }),
-//             invalidatesTags: ["Products"]
+//       invalidatesTags: ["Products"],
 //     }),
+
 //     deleteProduct: builder.mutation<void, string>({
 //       query: (uuid) => ({
 //         url: `/products/${uuid}`,
-//           method: "DELETE",
-//           headers: {
-//             "Content-Type": "application/json",
-//             Authorization: `bearer ${process.env.NEXT_PUBLIC_ACCESS_TOKEN}`,
-//           },
+//         method: 'DELETE',
 //       }),
-//             invalidatesTags: ["Products"]
-//     })
-//   })
-// })
+//       invalidatesTags: ["Products"],
+//     }),
+//   }),
+// });
 
 // export const {
-//  useGetAllProductQuery,
-//  useGetProductByUuidQuery, 
-//  useCreateProductMutation,
-//  useDeleteProductMutation,
-//  useUpdateProductMutation
+//   useGetAllProductQuery,
+//   useGetProductByUuidQuery,
+//   useCreateProductMutation,
+//   useUpdateProductMutation,
+//   useDeleteProductMutation,
 // } = ecommerceApi;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // services/ecommerce.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { CreateProductType, ProductResponse, ProductType, UpdateProductType } from '@/lib/products';
 
 export const ecommerceApi = createApi({
   reducerPath: 'ecommerceApi',
   baseQuery: fetchBaseQuery({
     baseUrl: `${process.env.NEXT_PUBLIC_ISHOP_BASE_URL}`,
+    credentials: 'include',
     prepareHeaders: (headers) => {
-      const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
-      headers.set('content-type', 'application/json');
+      headers.set('Content-Type', 'application/json');
       return headers;
     },
   }),
+  tagTypes: ["Products"],
   endpoints: (builder) => ({
-    // ===== READ - Get All Products =====
-    getAllProduct: builder.query<ProductResponse, { page: number; size: number }>({
-      query: ({ page, size }) => `/products?page=${page}&size=${size}`,
-    }),
-
-    // ===== READ - Get Product by UUID =====
-    getProductByUuid: builder.query<ProductType, string>({
-      query: (uuid: string) => ({
-        url: `/products/${uuid}`,
+    getAllProduct: builder.query<any, { page?: number; size?: number }>({
+      query: ({ page = 1, size = 10 } = {}) => ({
+        url: `/products?page=${page}&size=${size}`,
+        method: 'GET',
       }),
+      providesTags: ["Products"],
     }),
 
-    // ===== CREATE - Create Product =====
-    createProduct: builder.mutation<CreateProductType, any>({
+    getProductByUuid: builder.query<any, string>({
+      query: (uuid) => ({
+        url: `/products/${uuid}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, uuid) => [{ type: 'Products', id: uuid }],
+    }),
+
+    createProduct: builder.mutation<any, any>({
       query: (newProduct) => ({
         url: `/products`,
         method: 'POST',
         body: newProduct,
       }),
+      invalidatesTags: ["Products"],
     }),
 
-    // ===== UPDATE - Update Product =====
-    updateProduct: builder.mutation<UpdateProductType, { uuid: string; data: UpdateProductType }>({
+    updateProduct: builder.mutation<any, { uuid: string; data: any }>({
       query: ({ uuid, data }) => ({
         url: `/products/${uuid}`,
         method: 'PUT',
         body: data,
       }),
+      invalidatesTags: (result, error, { uuid }) => [{ type: 'Products', id: uuid }],
     }),
 
-    // ===== DELETE - Delete Product =====
-    deleteProduct: builder.mutation<string, string>({
+    deleteProduct: builder.mutation<void, string>({
       query: (uuid) => ({
         url: `/products/${uuid}`,
         method: 'DELETE',
       }),
+      invalidatesTags: ["Products"],
     }),
   }),
 });
