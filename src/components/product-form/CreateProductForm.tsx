@@ -16,7 +16,9 @@ import { useUploadSingleFileMutation } from "@/services/uploadApi";
 import { useCreateProductMutation } from "@/services/ecommerce";
 import { Field, FieldLabel } from "@/components/ui/field";
 
+
 type ProductFormValue = z.infer<typeof productFormSchema>;
+
 
 export default function CreateProductForm() {
   const [uploadSingleFile, { isLoading: isUploading }] = useUploadSingleFileMutation();

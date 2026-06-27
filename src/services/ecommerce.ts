@@ -80,76 +80,47 @@
 
 
 
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { ProductForm } from "@/components/product-form/product-form-schema";
 
-
-
-// services/ecommerce.ts
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+// Define the API response interface matching your backend design
+export interface ProductResponse {
+  success: boolean;
+  message?: string;
+  data?: ProductForm & {
+    id?: number;
+    uuid?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+}
 
 export const ecommerceApi = createApi({
-  reducerPath: 'ecommerceApi',
+  reducerPath: "ecommerceApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${process.env.NEXT_PUBLIC_ISHOP_BASE_URL}`,
-    credentials: 'include',
     prepareHeaders: (headers) => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      // Automatically grab the token on every request if it exists
+      const token = localStorage.getItem("accessToken");
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set("authorization", `Bearer ${token}`);
       }
-      headers.set('Content-Type', 'application/json');
       return headers;
     },
   }),
   tagTypes: ["Products"],
   endpoints: (builder) => ({
-    getAllProduct: builder.query<any, { page?: number; size?: number }>({
-      query: ({ page = 1, size = 10 } = {}) => ({
-        url: `/products?page=${page}&size=${size}`,
-        method: 'GET',
-      }),
-      providesTags: ["Products"],
-    }),
-
-    getProductByUuid: builder.query<any, string>({
-      query: (uuid) => ({
-        url: `/products/${uuid}`,
-        method: 'GET',
-      }),
-      providesTags: (result, error, uuid) => [{ type: 'Products', id: uuid }],
-    }),
-
-    createProduct: builder.mutation<any, any>({
+    // Mutation matching your component's useCreateProductMutation() hook
+    createProduct: builder.mutation<ProductResponse, ProductForm>({
       query: (newProduct) => ({
-        url: `/products`,
-        method: 'POST',
+        url: "/products", // Adjust the endpoint mapping to your actual API route
+        method: "POST",
         body: newProduct,
       }),
-      invalidatesTags: ["Products"],
-    }),
-
-    updateProduct: builder.mutation<any, { uuid: string; data: any }>({
-      query: ({ uuid, data }) => ({
-        url: `/products/${uuid}`,
-        method: 'PUT',
-        body: data,
-      }),
-      invalidatesTags: (result, error, { uuid }) => [{ type: 'Products', id: uuid }],
-    }),
-
-    deleteProduct: builder.mutation<void, string>({
-      query: (uuid) => ({
-        url: `/products/${uuid}`,
-        method: 'DELETE',
-      }),
+      // Invalidates the list cache so the updated view pulls fresh data automatically
       invalidatesTags: ["Products"],
     }),
   }),
 });
 
-export const {
-  useGetAllProductQuery,
-  useGetProductByUuidQuery,
-  useCreateProductMutation,
-  useUpdateProductMutation,
-  useDeleteProductMutation,
-} = ecommerceApi;
+export const { useCreateProductMutation } = ecommerceApi;
